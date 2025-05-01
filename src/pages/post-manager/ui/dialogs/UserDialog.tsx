@@ -1,11 +1,11 @@
-import { UserInfo } from "@pages/post-manager/ui/PostsManagerPage.tsx"
+import { User } from "@entities/user/model/types.ts"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@shared/ui"
 import React from "react"
 
 interface IProps {
   showUserModal: boolean
   setShowUserModal: React.Dispatch<React.SetStateAction<boolean>>
-  selectedUser: UserInfo | null
+  selectedUser: User | null
 }
 export default function UserDialog({ showUserModal, setShowUserModal, selectedUser }: IProps) {
   return (
