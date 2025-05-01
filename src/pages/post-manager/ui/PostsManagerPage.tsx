@@ -12,36 +12,6 @@ import { Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
-export interface PostTag {
-  slug: string
-  name: string
-  url: string
-}
-
-export interface Post {
-  id: number
-  title: string
-  body: string
-  tags: string[]
-  reactions: {
-    likes: number
-    dislikes: number
-  }
-  views: number
-  userId: number
-  author: {
-    id: number
-    username: string
-    image: string
-  }
-}
-
-export interface NewPost {
-  title: string
-  body: string
-  userId: number
-}
-
 export interface User {
   id: number
   image: string

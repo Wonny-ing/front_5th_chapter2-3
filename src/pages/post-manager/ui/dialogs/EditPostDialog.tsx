@@ -1,4 +1,4 @@
-import { Post } from "@pages/post-manager/ui/PostsManagerPage.tsx"
+import { Post } from "@entities/post/model/types.ts"
 import {
   Button,
   Dialog,

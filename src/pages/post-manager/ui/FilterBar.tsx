@@ -1,4 +1,4 @@
-import { PostTag } from "@pages/post-manager/ui/PostsManagerPage.tsx"
+import { PostTag } from "@entities/post/model/types.ts"
 import {
   Input,
   Select,
