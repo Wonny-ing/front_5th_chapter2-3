@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 export const usePostsQuery = ({ limit, skip }: { limit: number; skip: number }) => {
   return useQuery({
     queryKey: ["posts", { limit, skip }],
-    queryFn: () => fetchPosts({ limit, skip }),
+    queryFn: async () => await fetchPosts({ limit, skip }),
   })
 }
 export const usePostTagsQuery = () => {
@@ -27,6 +27,6 @@ export const usePostByTagQuery = ({ tag }: { tag: string }) => {
   return useQuery({
     queryKey: ["searchPosts", tag],
     queryFn: () => fetchPostByTag({ tag }),
-    enabled: !!tag,
+    enabled: !!tag && tag !== "all",
   })
 }

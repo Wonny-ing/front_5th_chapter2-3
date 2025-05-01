@@ -1,5 +1,6 @@
 import PostsManagerPage from "@pages/post-manager/ui/PostsManagerPage.tsx"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { BrowserRouter as Router } from "react-router-dom"
 
 import Footer from "./widgets/ui/Footer.tsx"
@@ -19,6 +20,7 @@ const App = () => {
           <Footer />
         </div>
       </Router>
+      <ReactQueryDevtools initialIsOpen={true} />
     </QueryClientProvider>
   )
 }

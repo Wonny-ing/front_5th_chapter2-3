@@ -27,3 +27,10 @@ export interface PostTag {
   name: string
   url: string
 }
+
+export interface Posts {
+  posts: Post[]
+  limit: number
+  skip: number
+  total: number
+}

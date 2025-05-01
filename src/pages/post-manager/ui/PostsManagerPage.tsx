@@ -1,3 +1,14 @@
+import {
+  useAddPostMutation,
+  useDeletePostMutation,
+  useUpdatePostMutation,
+} from "@entities/post/api/mutations.ts"
+import {
+  usePostByTagQuery,
+  usePostsQuery,
+  usePostTagsQuery,
+  useSearchPostsQuery,
+} from "@entities/post/api/queries.ts"
 import AddCommentDialog from "@pages/post-manager/ui/dialogs/AddCommentDialog.tsx"
 import AddPostDialog from "@pages/post-manager/ui/dialogs/AddPostDialog.tsx"
 import EditCommentDialog from "@pages/post-manager/ui/dialogs/EditCommentDialog.tsx"
@@ -9,7 +20,7 @@ import PostPagination from "@pages/post-manager/ui/PostPagination.tsx"
 import Posts from "@pages/post-manager/ui/Posts.tsx"
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@shared/ui"
 import { Plus } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
 const PostsManager = () => {
@@ -17,9 +28,7 @@ const PostsManager = () => {
   const location = useLocation()
   const queryParams = new URLSearchParams(location.search)
 
-  // 상태 관리
-  const [posts, setPosts] = useState([])
-  const [total, setTotal] = useState(0)
+  // URL 관련 상태
   const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
   const [limit, setLimit] = useState(parseInt(queryParams.get("limit") || "10"))
   const [searchQuery, setSearchQuery] = useState(queryParams.get("search") || "")
@@ -29,9 +38,9 @@ const PostsManager = () => {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [newPost, setNewPost] = useState({ title: "", body: "", userId: 1 })
-  const [loading, setLoading] = useState(false)
-  const [tags, setTags] = useState([])
   const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
+
+  // Comment 관련 상태
   const [comments, setComments] = useState({})
   const [selectedComment, setSelectedComment] = useState(null)
   const [newComment, setNewComment] = useState({ body: "", postId: null, userId: 1 })
@@ -40,6 +49,57 @@ const PostsManager = () => {
   const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
   const [showUserModal, setShowUserModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
+
+  const { data: tagsData } = usePostTagsQuery()
+  const { data: searchData, isLoading: isSearchLoading } = useSearchPostsQuery({
+    searchQuery,
+  })
+  const { data: tagData, isLoading: isTagLoading } = usePostByTagQuery({
+    tag: selectedTag,
+  })
+  const { data: defaultData, isLoading: isDefaultLoading } = usePostsQuery({
+    limit,
+    skip,
+  })
+
+  const addPostMutation = useAddPostMutation({ limit, skip })
+  const updatePostMutation = useUpdatePostMutation({ limit, skip })
+  const deletePostMutation = useDeletePostMutation({ limit, skip })
+
+  // Users 데이터 가져오기 (나중에 User query로 대체될 예정)
+  const [usersData, setUsersData] = useState([])
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch("/api/users?limit=0&select=username,image")
+        const data = await response.json()
+        setUsersData(data.users)
+      } catch (error) {
+        console.error("사용자 정보 가져오기 오류:", error)
+      }
+    }
+    fetchUsers()
+  }, [])
+
+  // 현재 사용할 데이터 결정
+  const currentPostsData = useMemo(() => {
+    if (searchQuery) return searchData
+    if (selectedTag && selectedTag !== "all") return tagData
+    return defaultData
+  }, [searchQuery, selectedTag, searchData, tagData, defaultData])
+
+  // Posts와 User 데이터 결합
+  const posts = useMemo(() => {
+    if (!currentPostsData?.posts || !usersData) return []
+    return currentPostsData.posts.map((post) => ({
+      ...post,
+      author: usersData.find((user) => user.id === post.userId),
+    }))
+  }, [currentPostsData, usersData])
+
+  const total = currentPostsData?.total || 0
+  const tags = tagsData || []
+  const loading = isSearchLoading || isTagLoading || isDefaultLoading
 
   // URL 업데이트 함수
   const updateURL = () => {
@@ -53,103 +113,26 @@ const PostsManager = () => {
     navigate(`?${params.toString()}`)
   }
 
-  // 게시물 가져오기
-  const fetchPosts = () => {
-    setLoading(true)
-    let postsData
-    let usersData
-
-    fetch(`/api/posts?limit=${limit}&skip=${skip}`)
-      .then((response) => response.json())
-      .then((data) => {
-        postsData = data
-        return fetch("/api/users?limit=0&select=username,image")
-      })
-      .then((response) => response.json())
-      .then((users) => {
-        usersData = users.users
-        const postsWithUsers = postsData.posts.map((post) => ({
-          ...post,
-          author: usersData.find((user) => user.id === post.userId),
-        }))
-        setPosts(postsWithUsers)
-        setTotal(postsData.total)
-      })
-      .catch((error) => {
-        console.error("게시물 가져오기 오류:", error)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }
-
-  // 태그 가져오기
-  const fetchTags = async () => {
-    try {
-      const response = await fetch("/api/posts/tags")
-      const data = await response.json()
-      setTags(data)
-    } catch (error) {
-      console.error("태그 가져오기 오류:", error)
-    }
-  }
-
   // 게시물 검색
   const searchPosts = async () => {
     if (!searchQuery) {
-      fetchPosts()
-      return
+      setSelectedTag("")
     }
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/posts/search?q=${searchQuery}`)
-      const data = await response.json()
-      setPosts(data.posts)
-      setTotal(data.total)
-    } catch (error) {
-      console.error("게시물 검색 오류:", error)
-    }
-    setLoading(false)
   }
 
   // 태그별 게시물 가져오기
   const fetchPostsByTag = async (tag) => {
     if (!tag || tag === "all") {
-      fetchPosts()
-      return
+      setSelectedTag("")
+    } else {
+      setSelectedTag(tag)
     }
-    setLoading(true)
-    try {
-      const [postsResponse, usersResponse] = await Promise.all([
-        fetch(`/api/posts/tag/${tag}`),
-        fetch("/api/users?limit=0&select=username,image"),
-      ])
-      const postsData = await postsResponse.json()
-      const usersData = await usersResponse.json()
-
-      const postsWithUsers = postsData.posts.map((post) => ({
-        ...post,
-        author: usersData.users.find((user) => user.id === post.userId),
-      }))
-
-      setPosts(postsWithUsers)
-      setTotal(postsData.total)
-    } catch (error) {
-      console.error("태그별 게시물 가져오기 오류:", error)
-    }
-    setLoading(false)
   }
 
   // 게시물 추가
   const addPost = async () => {
     try {
-      const response = await fetch("/api/posts/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newPost),
-      })
-      const data = await response.json()
-      setPosts([data, ...posts])
+      await addPostMutation.mutateAsync({ post: newPost })
       setShowAddDialog(false)
       setNewPost({ title: "", body: "", userId: 1 })
     } catch (error) {
@@ -160,13 +143,7 @@ const PostsManager = () => {
   // 게시물 업데이트
   const updatePost = async () => {
     try {
-      const response = await fetch(`/api/posts/${selectedPost.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(selectedPost),
-      })
-      const data = await response.json()
-      setPosts(posts.map((post) => (post.id === data.id ? data : post)))
+      await updatePostMutation.mutateAsync({ post: selectedPost })
       setShowEditDialog(false)
     } catch (error) {
       console.error("게시물 업데이트 오류:", error)
@@ -176,10 +153,7 @@ const PostsManager = () => {
   // 게시물 삭제
   const deletePost = async (id) => {
     try {
-      await fetch(`/api/posts/${id}`, {
-        method: "DELETE",
-      })
-      setPosts(posts.filter((post) => post.id !== id))
+      await deletePostMutation.mutateAsync({ id })
     } catch (error) {
       console.error("게시물 삭제 오류:", error)
     }
@@ -293,14 +267,10 @@ const PostsManager = () => {
   }
 
   useEffect(() => {
-    fetchTags()
-  }, [])
-
-  useEffect(() => {
     if (selectedTag) {
       fetchPostsByTag(selectedTag)
     } else {
-      fetchPosts()
+      // fetchPosts()
     }
     updateURL()
   }, [skip, limit, sortBy, sortOrder, selectedTag])
