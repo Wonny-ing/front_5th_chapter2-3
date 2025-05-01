@@ -1,3 +1,5 @@
+import { useLikeCommentMutation } from "@entities/comment/api/mutations.ts"
+import { useCommentsQuery } from "@entities/comment/api/queries.ts"
 import Comments from "@pages/post-manager/ui/Comments.tsx"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@shared/ui"
 
@@ -9,12 +11,23 @@ export default function PostDialog({
   searchQuery,
   setNewComment,
   setShowAddCommentDialog,
-  comments,
-  likeComment,
   setSelectedComment,
   setShowEditCommentDialog,
   deleteComment,
 }) {
+  const { data, isLoading } = useCommentsQuery({ postId: selectedPost?.id })
+  const likeCommentMutation = useLikeCommentMutation({ postId: selectedPost?.id })
+
+  // 댓글 좋아요
+  const likeComment = async (id) => {
+    if (isLoading || !data) return
+    try {
+      await likeCommentMutation.mutateAsync({ comments: data.comments, id })
+    } catch (error) {
+      console.error("댓글 좋아요 오류:", error)
+    }
+  }
+
   return (
     <Dialog open={showPostDetailDialog} onOpenChange={setShowPostDetailDialog}>
       <DialogContent className="max-w-3xl">
@@ -28,7 +41,6 @@ export default function PostDialog({
             postId={selectedPost?.id}
             setNewComment={setNewComment}
             setShowAddCommentDialog={setShowAddCommentDialog}
-            comments={comments}
             highlightText={highlightText}
             searchQuery={searchQuery}
             likeComment={likeComment}

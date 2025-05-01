@@ -1,4 +1,4 @@
-import { Comment, CommentsByPostId, NewComment } from "@entities/comment/model/types.ts"
+import { Comment, NewComment } from "@entities/comment/model/types.ts"
 
 // 댓글 가져오기
 export const fetchComments = async ({ postId }: { postId: number }) => {
@@ -39,19 +39,11 @@ export const deleteComment = async ({ id }: { id: number }) => {
 }
 
 // 댓글 좋아요
-export const likeComment = async ({
-  comments,
-  id,
-  postId,
-}: {
-  comments: CommentsByPostId
-  id: number
-  postId: number
-}) => {
+export const likeComment = async ({ comments, id }: { comments: Comment[]; id: number }) => {
   const response = await fetch(`/api/comments/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ likes: comments[postId].find((c) => c.id === id).likes + 1 }),
+    body: JSON.stringify({ likes: comments.find((c) => c.id === id).likes + 1 }),
   })
   const data = await response.json()
   return data

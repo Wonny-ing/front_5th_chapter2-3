@@ -1,4 +1,9 @@
 import {
+  useAddCommentMutation,
+  useDeleteCommentMutation,
+  useUpdateCommentMutation,
+} from "@entities/comment/api/mutations.ts"
+import {
   useAddPostMutation,
   useDeletePostMutation,
   useUpdatePostMutation,
@@ -42,14 +47,15 @@ const PostsManager = () => {
   const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
 
   // Comment 관련 상태
-  const [comments, setComments] = useState({})
   const [selectedComment, setSelectedComment] = useState(null)
   const [newComment, setNewComment] = useState({ body: "", postId: null, userId: 1 })
   const [showAddCommentDialog, setShowAddCommentDialog] = useState(false)
   const [showEditCommentDialog, setShowEditCommentDialog] = useState(false)
+
   const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
-  const [showUserModal, setShowUserModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
+
+  const [showUserModal, setShowUserModal] = useState(false)
 
   const { data: tagsData } = usePostTagsQuery()
   const { data: searchData, isLoading: isSearchLoading } = useSearchPostsQuery({
@@ -66,6 +72,11 @@ const PostsManager = () => {
   const addPostMutation = useAddPostMutation({ limit, skip })
   const updatePostMutation = useUpdatePostMutation({ limit, skip })
   const deletePostMutation = useDeletePostMutation({ limit, skip })
+
+  // Comment Mutations
+  const addCommentMutation = useAddCommentMutation({ postId: selectedPost?.id })
+  const updateCommentMutation = useUpdateCommentMutation({ postId: selectedPost?.id })
+  const deleteCommentMutation = useDeleteCommentMutation({ postId: selectedPost?.id })
 
   // Users 데이터 가져오기 (나중에 User query로 대체될 예정)
   const { data: usersData } = useUsersQuery()
@@ -148,31 +159,10 @@ const PostsManager = () => {
     }
   }
 
-  // 댓글 가져오기
-  const fetchComments = async (postId) => {
-    if (comments[postId]) return // 이미 불러온 댓글이 있으면 다시 불러오지 않음
-    try {
-      const response = await fetch(`/api/comments/post/${postId}`)
-      const data = await response.json()
-      setComments((prev) => ({ ...prev, [postId]: data.comments }))
-    } catch (error) {
-      console.error("댓글 가져오기 오류:", error)
-    }
-  }
-
   // 댓글 추가
   const addComment = async () => {
     try {
-      const response = await fetch("/api/comments/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newComment),
-      })
-      const data = await response.json()
-      setComments((prev) => ({
-        ...prev,
-        [data.postId]: [...(prev[data.postId] || []), data],
-      }))
+      await addCommentMutation.mutateAsync({ newComment })
       setShowAddCommentDialog(false)
       setNewComment({ body: "", postId: null, userId: 1 })
     } catch (error) {
@@ -183,18 +173,7 @@ const PostsManager = () => {
   // 댓글 업데이트
   const updateComment = async () => {
     try {
-      const response = await fetch(`/api/comments/${selectedComment.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: selectedComment.body }),
-      })
-      const data = await response.json()
-      setComments((prev) => ({
-        ...prev,
-        [data.postId]: prev[data.postId].map((comment) =>
-          comment.id === data.id ? data : comment,
-        ),
-      }))
+      await updateCommentMutation.mutateAsync({ selectedComment })
       setShowEditCommentDialog(false)
     } catch (error) {
       console.error("댓글 업데이트 오류:", error)
@@ -202,44 +181,17 @@ const PostsManager = () => {
   }
 
   // 댓글 삭제
-  const deleteComment = async (id, postId) => {
+  const deleteComment = async (id) => {
     try {
-      await fetch(`/api/comments/${id}`, {
-        method: "DELETE",
-      })
-      setComments((prev) => ({
-        ...prev,
-        [postId]: prev[postId].filter((comment) => comment.id !== id),
-      }))
+      await deleteCommentMutation.mutateAsync({ id })
     } catch (error) {
       console.error("댓글 삭제 오류:", error)
-    }
-  }
-
-  // 댓글 좋아요
-  const likeComment = async (id, postId) => {
-    try {
-      const response = await fetch(`/api/comments/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ likes: comments[postId].find((c) => c.id === id).likes + 1 }),
-      })
-      const data = await response.json()
-      setComments((prev) => ({
-        ...prev,
-        [postId]: prev[postId].map((comment) =>
-          comment.id === data.id ? { ...data, likes: comment.likes + 1 } : comment,
-        ),
-      }))
-    } catch (error) {
-      console.error("댓글 좋아요 오류:", error)
     }
   }
 
   // 게시물 상세 보기
   const openPostDetail = (post) => {
     setSelectedPost(post)
-    fetchComments(post.id)
     setShowPostDetailDialog(true)
   }
 
@@ -393,8 +345,6 @@ const PostsManager = () => {
         searchQuery={searchQuery}
         setNewComment={setNewComment}
         setShowAddCommentDialog={setShowAddCommentDialog}
-        comments={comments}
-        likeComment={likeComment}
         setSelectedComment={setSelectedComment}
         setShowEditCommentDialog={setShowEditCommentDialog}
         deleteComment={deleteComment}

@@ -1,3 +1,4 @@
+import { useCommentsQuery } from "@entities/comment/api/queries.ts"
 import { Button } from "@shared/ui"
 import { Edit2, Plus, ThumbsUp, Trash2 } from "lucide-react"
 
@@ -5,7 +6,6 @@ export default function Comments({
   postId,
   setNewComment,
   setShowAddCommentDialog,
-  comments,
   highlightText,
   searchQuery,
   likeComment,
@@ -13,6 +13,12 @@ export default function Comments({
   setShowEditCommentDialog,
   deleteComment,
 }) {
+  const { data, isLoading } = useCommentsQuery({ postId })
+
+  if (isLoading) {
+    return null
+  }
+
   return (
     <div className="mt-2">
       <div className="flex items-center justify-between mb-2">
@@ -29,7 +35,7 @@ export default function Comments({
         </Button>
       </div>
       <div className="space-y-1">
-        {comments[postId]?.map((comment) => (
+        {data?.comments?.map((comment) => (
           <div key={comment.id} className="flex items-center justify-between text-sm border-b pb-1">
             <div className="flex items-center space-x-2 overflow-hidden">
               <span className="font-medium truncate">{comment.user.username}:</span>
