@@ -1,3 +1,4 @@
+import { useUpdateCommentMutation } from "@entities/comment/api/mutations.ts"
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from "@shared/ui"
 
 export default function EditCommentDialog({
@@ -5,8 +6,20 @@ export default function EditCommentDialog({
   setShowEditCommentDialog,
   selectedComment,
   setSelectedComment,
-  updateComment,
+  selectedPost,
 }) {
+  const updateCommentMutation = useUpdateCommentMutation({ postId: selectedPost?.id })
+
+  // 댓글 업데이트
+  const updateComment = async () => {
+    try {
+      await updateCommentMutation.mutateAsync({ selectedComment })
+      setShowEditCommentDialog(false)
+    } catch (error) {
+      console.error("댓글 업데이트 오류:", error)
+    }
+  }
+
   return (
     <Dialog open={showEditCommentDialog} onOpenChange={setShowEditCommentDialog}>
       <DialogContent>

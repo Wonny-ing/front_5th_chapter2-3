@@ -1,8 +1,4 @@
-import {
-  useAddCommentMutation,
-  useDeleteCommentMutation,
-  useUpdateCommentMutation,
-} from "@entities/comment/api/mutations.ts"
+import { useCommentsQuery } from "@entities/comment/api/queries.ts"
 import {
   useAddPostMutation,
   useDeletePostMutation,
@@ -69,14 +65,13 @@ const PostsManager = () => {
     skip,
   })
 
+  const { data: commentsData, isLoading: isCommentsLoading } = useCommentsQuery({
+    postId: selectedPost?.id,
+  })
+
   const addPostMutation = useAddPostMutation({ limit, skip })
   const updatePostMutation = useUpdatePostMutation({ limit, skip })
   const deletePostMutation = useDeletePostMutation({ limit, skip })
-
-  // Comment Mutations
-  const addCommentMutation = useAddCommentMutation({ postId: selectedPost?.id })
-  const updateCommentMutation = useUpdateCommentMutation({ postId: selectedPost?.id })
-  const deleteCommentMutation = useDeleteCommentMutation({ postId: selectedPost?.id })
 
   // Users 데이터 가져오기 (나중에 User query로 대체될 예정)
   const { data: usersData } = useUsersQuery()
@@ -159,36 +154,6 @@ const PostsManager = () => {
     }
   }
 
-  // 댓글 추가
-  const addComment = async () => {
-    try {
-      await addCommentMutation.mutateAsync({ newComment })
-      setShowAddCommentDialog(false)
-      setNewComment({ body: "", postId: null, userId: 1 })
-    } catch (error) {
-      console.error("댓글 추가 오류:", error)
-    }
-  }
-
-  // 댓글 업데이트
-  const updateComment = async () => {
-    try {
-      await updateCommentMutation.mutateAsync({ selectedComment })
-      setShowEditCommentDialog(false)
-    } catch (error) {
-      console.error("댓글 업데이트 오류:", error)
-    }
-  }
-
-  // 댓글 삭제
-  const deleteComment = async (id) => {
-    try {
-      await deleteCommentMutation.mutateAsync({ id })
-    } catch (error) {
-      console.error("댓글 삭제 오류:", error)
-    }
-  }
-
   // 게시물 상세 보기
   const openPostDetail = (post) => {
     setSelectedPost(post)
@@ -223,23 +188,6 @@ const PostsManager = () => {
     setSortOrder(params.get("sortOrder") || "asc")
     setSelectedTag(params.get("tag") || "")
   }, [location.search])
-
-  // 하이라이트 함수 추가
-  const highlightText = (text: string, highlight: string) => {
-    if (!text) return null
-    if (!highlight.trim()) {
-      return <span>{text}</span>
-    }
-    const regex = new RegExp(`(${highlight})`, "gi")
-    const parts = text.split(regex)
-    return (
-      <span>
-        {parts.map((part, i) =>
-          regex.test(part) ? <mark key={i}>{part}</mark> : <span key={i}>{part}</span>,
-        )}
-      </span>
-    )
-  }
 
   return (
     <Card className="w-full max-w-6xl mx-auto">
@@ -276,7 +224,6 @@ const PostsManager = () => {
           ) : (
             <Posts
               posts={posts}
-              highlightText={highlightText}
               searchQuery={searchQuery}
               selectedTag={selectedTag}
               setSelectedTag={setSelectedTag}
@@ -324,7 +271,7 @@ const PostsManager = () => {
         setShowAddCommentDialog={setShowAddCommentDialog}
         newComment={newComment}
         setNewComment={setNewComment}
-        addComment={addComment}
+        selectedPost={selectedPost}
       />
 
       {/* 댓글 수정 대화상자 */}
@@ -333,21 +280,21 @@ const PostsManager = () => {
         setShowEditCommentDialog={setShowEditCommentDialog}
         selectedComment={selectedComment}
         setSelectedComment={setSelectedComment}
-        updateComment={updateComment}
+        selectedPost={selectedPost}
       />
 
       {/* 게시물 상세 보기 대화상자 */}
       <PostDialog
         showPostDetailDialog={showPostDetailDialog}
         setShowPostDetailDialog={setShowPostDetailDialog}
-        highlightText={highlightText}
         selectedPost={selectedPost}
         searchQuery={searchQuery}
         setNewComment={setNewComment}
         setShowAddCommentDialog={setShowAddCommentDialog}
         setSelectedComment={setSelectedComment}
         setShowEditCommentDialog={setShowEditCommentDialog}
-        deleteComment={deleteComment}
+        comments={commentsData?.comments}
+        isCommentLoading={isCommentsLoading}
       />
 
       {/* 사용자 모달 */}

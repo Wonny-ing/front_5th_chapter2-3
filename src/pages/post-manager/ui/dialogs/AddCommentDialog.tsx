@@ -1,3 +1,4 @@
+import { useAddCommentMutation } from "@entities/comment/api/mutations.ts"
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from "@shared/ui"
 
 export default function AddCommentDialog({
@@ -5,8 +6,21 @@ export default function AddCommentDialog({
   setShowAddCommentDialog,
   newComment,
   setNewComment,
-  addComment,
+  selectedPost,
 }) {
+  const addCommentMutation = useAddCommentMutation({ postId: selectedPost?.id })
+
+  // 댓글 추가
+  const addComment = async () => {
+    try {
+      await addCommentMutation.mutateAsync({ newComment })
+      setShowAddCommentDialog(false)
+      setNewComment({ body: "", postId: null, userId: 1 })
+    } catch (error) {
+      console.error("댓글 추가 오류:", error)
+    }
+  }
+
   return (
     <Dialog open={showAddCommentDialog} onOpenChange={setShowAddCommentDialog}>
       <DialogContent>

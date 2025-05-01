@@ -4,7 +4,6 @@ import React from "react"
 
 export default function Posts({
   posts,
-  highlightText,
   searchQuery,
   selectedTag,
   setSelectedTag,
@@ -31,7 +30,6 @@ export default function Posts({
           <Post
             key={post.id}
             post={post}
-            highlightText={highlightText}
             searchQuery={searchQuery}
             selectedTag={selectedTag}
             setSelectedTag={setSelectedTag}

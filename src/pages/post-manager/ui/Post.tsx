@@ -1,11 +1,11 @@
 import { useUserByIdQuery } from "@entities/user/api/queries.ts"
 import { Button, TableCell, TableRow } from "@shared/ui"
+import HighlightText from "@shared/ui/HighlightText.tsx"
 import { Edit2, MessageSquare, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react"
 import React from "react"
 
 export default function Post({
   post,
-  highlightText,
   searchQuery,
   selectedTag,
   setSelectedTag,
@@ -25,7 +25,9 @@ export default function Post({
       <TableCell>{post.id}</TableCell>
       <TableCell>
         <div className="space-y-1">
-          <div>{highlightText(post.title, searchQuery)}</div>
+          <div>
+            <HighlightText text={post.title} highlight={searchQuery} />
+          </div>
 
           <div className="flex flex-wrap gap-1">
             {post.tags?.map((tag) => (
