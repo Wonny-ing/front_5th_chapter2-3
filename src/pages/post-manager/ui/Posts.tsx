@@ -12,7 +12,9 @@ export default function Posts({
   openUserModal,
   setSelectedPost,
   setShowEditDialog,
-  deletePost,
+  // deletePost,
+  limit,
+  skip,
 }) {
   return (
     <Table>
@@ -38,7 +40,8 @@ export default function Posts({
             openPostDetail={openPostDetail}
             setSelectedPost={setSelectedPost}
             setShowEditDialog={setShowEditDialog}
-            deletePost={deletePost}
+            limit={limit}
+            skip={skip}
           />
         ))}
       </TableBody>

@@ -1,3 +1,4 @@
+import { useAddPostMutation } from "@entities/post/api/mutations.ts"
 import { NewPost } from "@entities/post/model/types.ts"
 import {
   Button,
@@ -15,15 +16,29 @@ interface IProps {
   setShowAddDialog: React.Dispatch<React.SetStateAction<boolean>>
   newPost: NewPost
   setNewPost: React.Dispatch<React.SetStateAction<NewPost>>
-  addPost: () => Promise<void>
 }
 export default function AddPostDialog({
   showAddDialog,
   setShowAddDialog,
   newPost,
   setNewPost,
-  addPost,
+  // addPost,
+  limit,
+  skip,
 }: IProps) {
+  const addPostMutation = useAddPostMutation({ limit, skip })
+
+  // 게시물 추가
+  const addPost = async () => {
+    try {
+      await addPostMutation.mutateAsync({ post: newPost })
+      setShowAddDialog(false)
+      setNewPost({ title: "", body: "", userId: 1 })
+    } catch (error) {
+      console.error("게시물 추가 오류:", error)
+    }
+  }
+
   return (
     <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
       <DialogContent>

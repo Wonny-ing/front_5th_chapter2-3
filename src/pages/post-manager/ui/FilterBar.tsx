@@ -1,3 +1,4 @@
+import { usePostTagsQuery } from "@entities/post/api/queries.ts"
 import { PostTag } from "@entities/post/model/types.ts"
 import {
   Input,
@@ -19,7 +20,6 @@ interface IProps {
   setSortBy: React.Dispatch<React.SetStateAction<string>>
   sortOrder: string
   setSortOrder: React.Dispatch<React.SetStateAction<string>>
-  tags: PostTag[]
   updateURL: () => void
   fetchPostsByTag: (tag: string) => void
   searchPosts: () => void
@@ -32,12 +32,13 @@ export default function FilterBar({
   selectedTag,
   setSelectedTag,
   updateURL,
-  tags,
   sortBy,
   setSortBy,
   sortOrder,
   setSortOrder,
 }: IProps) {
+  const { data: tags } = usePostTagsQuery()
+
   return (
     <div className="flex gap-4">
       <div className="flex-1">
@@ -67,7 +68,7 @@ export default function FilterBar({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">모든 태그</SelectItem>
-          {tags.map((tag: PostTag) => (
+          {tags?.map((tag: PostTag) => (
             <SelectItem key={tag.url} value={tag.slug}>
               {tag.slug}
             </SelectItem>

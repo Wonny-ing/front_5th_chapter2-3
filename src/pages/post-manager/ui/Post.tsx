@@ -1,3 +1,4 @@
+import { useDeletePostMutation } from "@entities/post/api/mutations.ts"
 import { useUserByIdQuery } from "@entities/user/api/queries.ts"
 import { Button, TableCell, TableRow } from "@shared/ui"
 import HighlightText from "@shared/ui/HighlightText.tsx"
@@ -14,11 +15,23 @@ export default function Post({
   openPostDetail,
   setSelectedPost,
   setShowEditDialog,
-  deletePost,
+  limit,
+  skip,
 }) {
   const { data: user, isLoading: isUserLoading } = useUserByIdQuery({
     id: post.userId,
   })
+
+  const deletePostMutation = useDeletePostMutation({ limit, skip })
+
+  // 게시물 삭제
+  const deletePost = async (id) => {
+    try {
+      await deletePostMutation.mutateAsync({ id })
+    } catch (error) {
+      console.error("게시물 삭제 오류:", error)
+    }
+  }
 
   return (
     <TableRow key={post.id}>

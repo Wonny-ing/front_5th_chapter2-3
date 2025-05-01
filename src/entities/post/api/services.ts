@@ -42,8 +42,8 @@ export const addPost = async ({ post }: { post: NewPost }) => {
 }
 
 // 게시물 업데이트
-export const updatePost = async ({ post }: { post: Post }) => {
-  const response = await fetch(`/api/posts/${post.id}`, {
+export const updatePost = async ({ post }: { post: Post | null }) => {
+  const response = await fetch(`/api/posts/${post?.id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(post),

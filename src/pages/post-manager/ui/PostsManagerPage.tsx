@@ -1,13 +1,7 @@
 import { useCommentsQuery } from "@entities/comment/api/queries.ts"
 import {
-  useAddPostMutation,
-  useDeletePostMutation,
-  useUpdatePostMutation,
-} from "@entities/post/api/mutations.ts"
-import {
   usePostByTagQuery,
   usePostsQuery,
-  usePostTagsQuery,
   useSearchPostsQuery,
 } from "@entities/post/api/queries.ts"
 import { useUsersQuery } from "@entities/user/api/queries.ts"
@@ -50,10 +44,8 @@ const PostsManager = () => {
 
   const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
-
   const [showUserModal, setShowUserModal] = useState(false)
 
-  const { data: tagsData } = usePostTagsQuery()
   const { data: searchData, isLoading: isSearchLoading } = useSearchPostsQuery({
     searchQuery,
   })
@@ -69,11 +61,6 @@ const PostsManager = () => {
     postId: selectedPost?.id,
   })
 
-  const addPostMutation = useAddPostMutation({ limit, skip })
-  const updatePostMutation = useUpdatePostMutation({ limit, skip })
-  const deletePostMutation = useDeletePostMutation({ limit, skip })
-
-  // Users 데이터 가져오기 (나중에 User query로 대체될 예정)
   const { data: usersData } = useUsersQuery()
 
   // 현재 사용할 데이터 결정
@@ -92,8 +79,6 @@ const PostsManager = () => {
     }))
   }, [currentPostsData, usersData])
 
-  const total = currentPostsData?.total || 0
-  const tags = tagsData || []
   const loading = isSearchLoading || isTagLoading || isDefaultLoading
 
   // URL 업데이트 함수
@@ -124,36 +109,6 @@ const PostsManager = () => {
     }
   }
 
-  // 게시물 추가
-  const addPost = async () => {
-    try {
-      await addPostMutation.mutateAsync({ post: newPost })
-      setShowAddDialog(false)
-      setNewPost({ title: "", body: "", userId: 1 })
-    } catch (error) {
-      console.error("게시물 추가 오류:", error)
-    }
-  }
-
-  // 게시물 업데이트
-  const updatePost = async () => {
-    try {
-      await updatePostMutation.mutateAsync({ post: selectedPost })
-      setShowEditDialog(false)
-    } catch (error) {
-      console.error("게시물 업데이트 오류:", error)
-    }
-  }
-
-  // 게시물 삭제
-  const deletePost = async (id) => {
-    try {
-      await deletePostMutation.mutateAsync({ id })
-    } catch (error) {
-      console.error("게시물 삭제 오류:", error)
-    }
-  }
-
   // 게시물 상세 보기
   const openPostDetail = (post) => {
     setSelectedPost(post)
@@ -173,8 +128,6 @@ const PostsManager = () => {
   useEffect(() => {
     if (selectedTag) {
       fetchPostsByTag(selectedTag)
-    } else {
-      // fetchPosts()
     }
     updateURL()
   }, [skip, limit, sortBy, sortOrder, selectedTag])
@@ -212,7 +165,6 @@ const PostsManager = () => {
             setSortBy={setSortBy}
             sortOrder={sortOrder}
             setSortOrder={setSortOrder}
-            tags={tags}
             updateURL={updateURL}
             fetchPostsByTag={fetchPostsByTag}
             searchPosts={searchPosts}
@@ -232,7 +184,8 @@ const PostsManager = () => {
               openUserModal={openUserModal}
               setSelectedPost={setSelectedPost}
               setShowEditDialog={setShowEditDialog}
-              deletePost={deletePost}
+              limit={limit}
+              skip={skip}
             />
           )}
 
@@ -242,7 +195,7 @@ const PostsManager = () => {
             setLimit={setLimit}
             skip={skip}
             setSkip={setSkip}
-            total={total}
+            total={currentPostsData?.total || 0}
           />
         </div>
       </CardContent>
@@ -253,7 +206,8 @@ const PostsManager = () => {
         setShowAddDialog={setShowAddDialog}
         newPost={newPost}
         setNewPost={setNewPost}
-        addPost={addPost}
+        limit={limit}
+        skip={skip}
       />
 
       {/* 게시물 수정 대화상자 */}
@@ -262,7 +216,8 @@ const PostsManager = () => {
         setShowEditDialog={setShowEditDialog}
         selectedPost={selectedPost}
         setSelectedPost={setSelectedPost}
-        updatePost={updatePost}
+        limit={limit}
+        skip={skip}
       />
 
       {/* 댓글 추가 대화상자 */}
