@@ -9,6 +9,7 @@ import {
   usePostTagsQuery,
   useSearchPostsQuery,
 } from "@entities/post/api/queries.ts"
+import { useUsersQuery } from "@entities/user/api/queries.ts"
 import AddCommentDialog from "@pages/post-manager/ui/dialogs/AddCommentDialog.tsx"
 import AddPostDialog from "@pages/post-manager/ui/dialogs/AddPostDialog.tsx"
 import EditCommentDialog from "@pages/post-manager/ui/dialogs/EditCommentDialog.tsx"
@@ -67,19 +68,7 @@ const PostsManager = () => {
   const deletePostMutation = useDeletePostMutation({ limit, skip })
 
   // Users 데이터 가져오기 (나중에 User query로 대체될 예정)
-  const [usersData, setUsersData] = useState([])
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch("/api/users?limit=0&select=username,image")
-        const data = await response.json()
-        setUsersData(data.users)
-      } catch (error) {
-        console.error("사용자 정보 가져오기 오류:", error)
-      }
-    }
-    fetchUsers()
-  }, [])
+  const { data: usersData } = useUsersQuery()
 
   // 현재 사용할 데이터 결정
   const currentPostsData = useMemo(() => {
@@ -93,7 +82,7 @@ const PostsManager = () => {
     if (!currentPostsData?.posts || !usersData) return []
     return currentPostsData.posts.map((post) => ({
       ...post,
-      author: usersData.find((user) => user.id === post.userId),
+      author: usersData.users.find((user) => user.id === post.userId),
     }))
   }, [currentPostsData, usersData])
 
@@ -257,9 +246,7 @@ const PostsManager = () => {
   // 사용자 모달 열기
   const openUserModal = async (user) => {
     try {
-      const response = await fetch(`/api/users/${user.id}`)
-      const userData = await response.json()
-      setSelectedUser(userData)
+      setSelectedUser(user)
       setShowUserModal(true)
     } catch (error) {
       console.error("사용자 정보 가져오기 오류:", error)

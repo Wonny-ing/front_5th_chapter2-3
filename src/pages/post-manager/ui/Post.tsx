@@ -1,3 +1,4 @@
+import { useUserByIdQuery } from "@entities/user/api/queries.ts"
 import { Button, TableCell, TableRow } from "@shared/ui"
 import { Edit2, MessageSquare, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react"
 import React from "react"
@@ -15,6 +16,10 @@ export default function Post({
   setShowEditDialog,
   deletePost,
 }) {
+  const { data: user, isLoading: isUserLoading } = useUserByIdQuery({
+    id: post.userId,
+  })
+
   return (
     <TableRow key={post.id}>
       <TableCell>{post.id}</TableCell>
@@ -45,7 +50,10 @@ export default function Post({
       <TableCell>
         <div
           className="flex items-center space-x-2 cursor-pointer"
-          onClick={() => openUserModal(post.author)}
+          onClick={() => {
+            if (isUserLoading) return
+            openUserModal(user)
+          }}
         >
           <img
             src={post.author?.image}

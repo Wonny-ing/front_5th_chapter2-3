@@ -1,5 +1,4 @@
 import { fetchUserById, fetchUsers } from "@entities/user/api/services.ts"
-import { User } from "@entities/user/model/types.ts"
 import { useQuery } from "@tanstack/react-query"
 
 export const useUsersQuery = () => {
@@ -9,9 +8,9 @@ export const useUsersQuery = () => {
   })
 }
 
-export const useUserByIdQuery = ({ user }: { user: User }) => {
+export const useUserByIdQuery = ({ id }: { id: number }) => {
   return useQuery({
-    queryKey: ["user", user],
-    queryFn: () => fetchUserById({ user }),
+    queryKey: ["user", id],
+    queryFn: () => fetchUserById({ id }),
   })
 }

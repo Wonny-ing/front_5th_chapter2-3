@@ -6,8 +6,8 @@ export const fetchUsers = async () => {
   return data
 }
 
-export const fetchUserById = async ({ user }: { user: User }) => {
-  const response = await fetch(`/api/users/${user.id}`)
+export const fetchUserById = async ({ id }: { id: number }) => {
+  const response = await fetch(`/api/users/${id}`)
   const data = await response.json()
   return data
 }
