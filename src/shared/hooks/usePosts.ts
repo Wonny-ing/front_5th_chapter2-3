@@ -1,6 +1,10 @@
-import { usePostByTagQuery, usePostsQuery, useSearchPostsQuery } from "@entities/post/api/queries"
-import { useUsersQuery } from "@entities/user/api/queries"
-import { useLayoutStore } from "@shared/model/store"
+import {
+  usePostByTagQuery,
+  usePostsQuery,
+  useSearchPostsQuery,
+} from "@entities/post/api/queries.ts"
+import { useUsersQuery } from "@entities/user/api/queries.ts"
+import { useLayoutStore } from "@shared/model/store.ts"
 import { useMemo } from "react"
 
 export const usePosts = () => {

@@ -1,14 +1,7 @@
 import { usePostTagsQuery } from "@entities/post/api/queries.ts"
 import { PostTag } from "@entities/post/model/types.ts"
 import { useLayoutStore } from "@shared/model/store.ts"
-import {
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@shared/ui/index.tsx"
+import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/ui"
 import { Search } from "lucide-react"
 import React from "react"
 
