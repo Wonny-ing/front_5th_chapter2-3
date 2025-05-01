@@ -1,19 +1,18 @@
+import { useCommentsQuery } from "@entities/comment/api/queries.ts"
+import { usePostStore } from "@entities/post/model/store.ts"
 import Comments from "@pages/post-manager/ui/Comments.tsx"
+import { useLayoutStore } from "@shared/model/store.ts"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@shared/ui"
 import HighlightText from "@shared/ui/HighlightText.tsx"
 
-export default function PostDialog({
-  showPostDetailDialog,
-  setShowPostDetailDialog,
-  selectedPost,
-  searchQuery,
-  setNewComment,
-  setShowAddCommentDialog,
-  setSelectedComment,
-  setShowEditCommentDialog,
-  comments,
-  isCommentLoading,
-}) {
+export default function PostDialog() {
+  const { showPostDetailDialog, setShowPostDetailDialog, searchQuery } = useLayoutStore()
+  const { selectedPost } = usePostStore()
+
+  const { data: commentsData, isLoading: isCommentsLoading } = useCommentsQuery({
+    postId: selectedPost?.id,
+  })
+
   return (
     <Dialog open={showPostDetailDialog} onOpenChange={setShowPostDetailDialog}>
       <DialogContent className="max-w-3xl">
@@ -27,17 +26,16 @@ export default function PostDialog({
             <HighlightText text={selectedPost?.body || ""} highlight={searchQuery} />
           </p>
           {/* 댓글 렌더링 */}
-          <Comments
-            postId={selectedPost?.id}
-            setNewComment={setNewComment}
-            setShowAddCommentDialog={setShowAddCommentDialog}
-            searchQuery={searchQuery}
-            setSelectedComment={setSelectedComment}
-            setShowEditCommentDialog={setShowEditCommentDialog}
-            selectedPost={selectedPost}
-            comments={comments}
-            isCommentLoading={isCommentLoading}
-          />
+          {isCommentsLoading || !commentsData ? (
+            <span>로딩 중...</span>
+          ) : (
+            <Comments
+              postId={selectedPost?.id}
+              searchQuery={searchQuery}
+              selectedPost={selectedPost}
+              commentsData={commentsData}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>

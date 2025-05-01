@@ -1,5 +1,6 @@
 import { useUpdatePostMutation } from "@entities/post/api/mutations.ts"
-import { Post } from "@entities/post/model/types.ts"
+import { usePostStore } from "@entities/post/model/store.ts"
+import { useLayoutStore } from "@shared/model/store.ts"
 import {
   Button,
   Dialog,
@@ -11,20 +12,10 @@ import {
 } from "@shared/ui"
 import React from "react"
 
-interface IProps {
-  showEditDialog: boolean
-  setShowEditDialog: React.Dispatch<React.SetStateAction<boolean>>
-  selectedPost: Post | null
-  setSelectedPost: React.Dispatch<React.SetStateAction<Post | null>>
-}
-export default function EditPostDialog({
-  showEditDialog,
-  setShowEditDialog,
-  selectedPost,
-  setSelectedPost,
-  limit,
-  skip,
-}: IProps) {
+export default function EditPostDialog() {
+  const { showEditDialog, skip, limit, setShowEditDialog } = useLayoutStore()
+  const { selectedPost, setSelectedPost } = usePostStore()
+
   const updatePostMutation = useUpdatePostMutation({ limit, skip })
 
   // 게시물 업데이트

@@ -1,10 +1,4 @@
-import { useCommentsQuery } from "@entities/comment/api/queries.ts"
-import {
-  usePostByTagQuery,
-  usePostsQuery,
-  useSearchPostsQuery,
-} from "@entities/post/api/queries.ts"
-import { useUsersQuery } from "@entities/user/api/queries.ts"
+import { usePosts } from "@entities/comment/model/usePosts.ts"
 import AddCommentDialog from "@pages/post-manager/ui/dialogs/AddCommentDialog.tsx"
 import AddPostDialog from "@pages/post-manager/ui/dialogs/AddPostDialog.tsx"
 import EditCommentDialog from "@pages/post-manager/ui/dialogs/EditCommentDialog.tsx"
@@ -14,132 +8,49 @@ import UserDialog from "@pages/post-manager/ui/dialogs/UserDialog.tsx"
 import FilterBar from "@pages/post-manager/ui/FilterBar.tsx"
 import PostPagination from "@pages/post-manager/ui/PostPagination.tsx"
 import Posts from "@pages/post-manager/ui/Posts.tsx"
+import { useLayoutStore } from "@shared/model/store.ts"
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@shared/ui"
 import { Plus } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
 const PostsManager = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const queryParams = new URLSearchParams(location.search)
 
-  // URL 관련 상태
-  const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
-  const [limit, setLimit] = useState(parseInt(queryParams.get("limit") || "10"))
-  const [searchQuery, setSearchQuery] = useState(queryParams.get("search") || "")
-  const [selectedPost, setSelectedPost] = useState(null)
-  const [sortBy, setSortBy] = useState(queryParams.get("sortBy") || "")
-  const [sortOrder, setSortOrder] = useState(queryParams.get("sortOrder") || "asc")
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [showEditDialog, setShowEditDialog] = useState(false)
-  const [newPost, setNewPost] = useState({ title: "", body: "", userId: 1 })
-  const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
-
-  // Comment 관련 상태
-  const [selectedComment, setSelectedComment] = useState(null)
-  const [newComment, setNewComment] = useState({ body: "", postId: null, userId: 1 })
-  const [showAddCommentDialog, setShowAddCommentDialog] = useState(false)
-  const [showEditCommentDialog, setShowEditCommentDialog] = useState(false)
-
-  const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
-  const [selectedUser, setSelectedUser] = useState(null)
-  const [showUserModal, setShowUserModal] = useState(false)
-
-  const { data: searchData, isLoading: isSearchLoading } = useSearchPostsQuery({
-    searchQuery,
-  })
-  const { data: tagData, isLoading: isTagLoading } = usePostByTagQuery({
-    tag: selectedTag,
-  })
-  const { data: defaultData, isLoading: isDefaultLoading } = usePostsQuery({
-    limit,
+  // ui관련 상태
+  const {
     skip,
-  })
+    limit,
+    searchQuery,
+    selectedTag,
+    setShowAddDialog,
+    initFromURL,
+    updateURLParams,
+    sortBy,
+    sortOrder,
+  } = useLayoutStore()
 
-  const { data: commentsData, isLoading: isCommentsLoading } = useCommentsQuery({
-    postId: selectedPost?.id,
-  })
+  // Posts 데이터 가져오기
+  const { posts, loading, total } = usePosts()
 
-  const { data: usersData } = useUsersQuery()
+  const updateURL = useCallback(() => {
+    const queryString = updateURLParams()
+    const currentQuery = location.search.slice(1)
 
-  // 현재 사용할 데이터 결정
-  const currentPostsData = useMemo(() => {
-    if (searchQuery) return searchData
-    if (selectedTag && selectedTag !== "all") return tagData
-    return defaultData
-  }, [searchQuery, selectedTag, searchData, tagData, defaultData])
-
-  // Posts와 User 데이터 결합
-  const posts = useMemo(() => {
-    if (!currentPostsData?.posts || !usersData) return []
-    return currentPostsData.posts.map((post) => ({
-      ...post,
-      author: usersData.users.find((user) => user.id === post.userId),
-    }))
-  }, [currentPostsData, usersData])
-
-  const loading = isSearchLoading || isTagLoading || isDefaultLoading
-
-  // URL 업데이트 함수
-  const updateURL = () => {
-    const params = new URLSearchParams()
-    if (skip) params.set("skip", skip.toString())
-    if (limit) params.set("limit", limit.toString())
-    if (searchQuery) params.set("search", searchQuery)
-    if (sortBy) params.set("sortBy", sortBy)
-    if (sortOrder) params.set("sortOrder", sortOrder)
-    if (selectedTag) params.set("tag", selectedTag)
-    navigate(`?${params.toString()}`)
-  }
-
-  // 게시물 검색
-  const searchPosts = async () => {
-    if (!searchQuery) {
-      setSelectedTag("")
+    // URL이 실제로 변경된 경우에만 navigate 실행
+    if (queryString !== currentQuery) {
+      navigate(`?${queryString}`, { replace: true })
     }
-  }
-
-  // 태그별 게시물 가져오기
-  const fetchPostsByTag = async (tag) => {
-    if (!tag || tag === "all") {
-      setSelectedTag("")
-    } else {
-      setSelectedTag(tag)
-    }
-  }
-
-  // 게시물 상세 보기
-  const openPostDetail = (post) => {
-    setSelectedPost(post)
-    setShowPostDetailDialog(true)
-  }
-
-  // 사용자 모달 열기
-  const openUserModal = async (user) => {
-    try {
-      setSelectedUser(user)
-      setShowUserModal(true)
-    } catch (error) {
-      console.error("사용자 정보 가져오기 오류:", error)
-    }
-  }
+  }, [updateURLParams, navigate, location.search])
 
   useEffect(() => {
-    if (selectedTag) {
-      fetchPostsByTag(selectedTag)
-    }
     updateURL()
-  }, [skip, limit, sortBy, sortOrder, selectedTag])
+  }, [skip, limit, sortBy, sortOrder, selectedTag, searchQuery])
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
-    setSkip(parseInt(params.get("skip") || "0"))
-    setLimit(parseInt(params.get("limit") || "10"))
-    setSearchQuery(params.get("search") || "")
-    setSortBy(params.get("sortBy") || "")
-    setSortOrder(params.get("sortOrder") || "asc")
-    setSelectedTag(params.get("tag") || "")
+    initFromURL(params)
   }, [location.search])
 
   return (
@@ -156,108 +67,37 @@ const PostsManager = () => {
       <CardContent>
         <div className="flex flex-col gap-4">
           {/* 검색 및 필터 컨트롤 */}
-          <FilterBar
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            selectedTag={selectedTag}
-            setSelectedTag={setSelectedTag}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            sortOrder={sortOrder}
-            setSortOrder={setSortOrder}
-            updateURL={updateURL}
-            fetchPostsByTag={fetchPostsByTag}
-            searchPosts={searchPosts}
-          />
+          <FilterBar updateURL={updateURL} />
 
           {/* 게시물 테이블 */}
           {loading ? (
             <div className="flex justify-center p-4">로딩 중...</div>
           ) : (
-            <Posts
-              posts={posts}
-              searchQuery={searchQuery}
-              selectedTag={selectedTag}
-              setSelectedTag={setSelectedTag}
-              updateURL={updateURL}
-              openPostDetail={openPostDetail}
-              openUserModal={openUserModal}
-              setSelectedPost={setSelectedPost}
-              setShowEditDialog={setShowEditDialog}
-              limit={limit}
-              skip={skip}
-            />
+            <Posts posts={posts} updateURL={updateURL} />
           )}
 
           {/* 페이지네이션 */}
-          <PostPagination
-            limit={limit}
-            setLimit={setLimit}
-            skip={skip}
-            setSkip={setSkip}
-            total={currentPostsData?.total || 0}
-          />
+          <PostPagination total={total || 0} />
         </div>
       </CardContent>
 
       {/* 게시물 추가 대화상자 */}
-      <AddPostDialog
-        showAddDialog={showAddDialog}
-        setShowAddDialog={setShowAddDialog}
-        newPost={newPost}
-        setNewPost={setNewPost}
-        limit={limit}
-        skip={skip}
-      />
+      <AddPostDialog />
 
       {/* 게시물 수정 대화상자 */}
-      <EditPostDialog
-        showEditDialog={showEditDialog}
-        setShowEditDialog={setShowEditDialog}
-        selectedPost={selectedPost}
-        setSelectedPost={setSelectedPost}
-        limit={limit}
-        skip={skip}
-      />
+      <EditPostDialog />
 
       {/* 댓글 추가 대화상자 */}
-      <AddCommentDialog
-        showAddCommentDialog={showAddCommentDialog}
-        setShowAddCommentDialog={setShowAddCommentDialog}
-        newComment={newComment}
-        setNewComment={setNewComment}
-        selectedPost={selectedPost}
-      />
+      <AddCommentDialog />
 
       {/* 댓글 수정 대화상자 */}
-      <EditCommentDialog
-        showEditCommentDialog={showEditCommentDialog}
-        setShowEditCommentDialog={setShowEditCommentDialog}
-        selectedComment={selectedComment}
-        setSelectedComment={setSelectedComment}
-        selectedPost={selectedPost}
-      />
+      <EditCommentDialog />
 
       {/* 게시물 상세 보기 대화상자 */}
-      <PostDialog
-        showPostDetailDialog={showPostDetailDialog}
-        setShowPostDetailDialog={setShowPostDetailDialog}
-        selectedPost={selectedPost}
-        searchQuery={searchQuery}
-        setNewComment={setNewComment}
-        setShowAddCommentDialog={setShowAddCommentDialog}
-        setSelectedComment={setSelectedComment}
-        setShowEditCommentDialog={setShowEditCommentDialog}
-        comments={commentsData?.comments}
-        isCommentLoading={isCommentsLoading}
-      />
+      <PostDialog />
 
       {/* 사용자 모달 */}
-      <UserDialog
-        showUserModal={showUserModal}
-        setShowUserModal={setShowUserModal}
-        selectedUser={selectedUser}
-      />
+      <UserDialog />
     </Card>
   )
 }

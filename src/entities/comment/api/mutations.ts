@@ -7,34 +7,34 @@ import {
 import { Comment, Comments } from "@entities/comment/model/types.ts"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
-export const useAddCommentMutation = ({ postId }: { postId: number }) => {
+export const useAddCommentMutation = ({ postId }: { postId: number | undefined }) => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: addComment,
     onSuccess: (newComment) => {
+      if (!postId) return
       queryClient.setQueryData<Comments>(["comments", { postId }], (oldData = []) => {
-        const filtered = (oldData as Comments)?.comments.filter(
-          (comment) => comment.id !== newComment.id,
-        )
         return {
           ...oldData,
-          comments: [...filtered, newComment],
+          // eslint-disable-next-line no-unsafe-optional-chaining
+          comments: [...(oldData as Comments)?.comments, newComment],
         }
       })
     },
   })
 }
 
-export const useUpdateCommentMutation = ({ postId }: { postId: number }) => {
+export const useUpdateCommentMutation = ({ postId }: { postId: number | undefined }) => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: updateComment,
-    onSuccess: (updatedComment) => {
+    onSuccess: (_, { selectedComment }) => {
+      if (!postId) return
       queryClient.setQueryData<Comments>(["comments", { postId }], (oldData = []) => {
         const updatedComments = (oldData as Comments)?.comments.map((comment) =>
-          comment.id === updatedComment.id ? updatedComment : comment,
+          comment.id === selectedComment.id ? selectedComment : comment,
         )
         return {
           ...oldData,
@@ -45,15 +45,16 @@ export const useUpdateCommentMutation = ({ postId }: { postId: number }) => {
   })
 }
 
-export const useDeleteCommentMutation = ({ postId }: { postId: number }) => {
+export const useDeleteCommentMutation = ({ postId }: { postId: number | undefined }) => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ id }: { id: number }) => deleteComment({ id }),
-    onSuccess: (deletedComment) => {
+    onSuccess: (_, { id }) => {
+      if (!postId) return
       queryClient.setQueryData<Comments>(["comments", { postId }], (oldData = []) => {
         const updatedPosts = oldData
-          ? (oldData as Comments).comments.filter((comment) => comment.id !== deletedComment.id)
+          ? (oldData as Comments).comments.filter((comment) => comment.id !== id)
           : []
         return { ...oldData, comments: updatedPosts }
       })
@@ -61,7 +62,7 @@ export const useDeleteCommentMutation = ({ postId }: { postId: number }) => {
   })
 }
 
-export const useLikeCommentMutation = ({ postId }: { postId: number }) => {
+export const useLikeCommentMutation = ({ postId }: { postId: number | undefined }) => {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -70,10 +71,13 @@ export const useLikeCommentMutation = ({ postId }: { postId: number }) => {
         comments,
         id,
       }),
-    onSuccess: (updatedComment) => {
+    onSuccess: (_, { comments, id }) => {
+      if (!postId) return
       queryClient.setQueryData<Comments>(["comments", { postId }], (oldData) => {
         const updatedComments = (oldData as Comments)?.comments.map((comment) =>
-          comment.id === updatedComment.id ? { ...comment, likes: comment.likes + 1 } : comment,
+          comment.id === id
+            ? { ...comment, likes: (comments.find((c) => c.id === id)?.likes ?? 0) + 1 }
+            : comment,
         )
         return {
           ...oldData,

@@ -1,13 +1,12 @@
-import { User } from "@entities/user/model/types.ts"
+import { useUserStore } from "@entities/user/model/store.ts"
+import { useLayoutStore } from "@shared/model/store.ts"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@shared/ui"
 import React from "react"
 
-interface IProps {
-  showUserModal: boolean
-  setShowUserModal: React.Dispatch<React.SetStateAction<boolean>>
-  selectedUser: User | null
-}
-export default function UserDialog({ showUserModal, setShowUserModal, selectedUser }: IProps) {
+export default function UserDialog() {
+  const { showUserModal, setShowUserModal } = useLayoutStore()
+  const { selectedUser } = useUserStore()
+
   return (
     <Dialog open={showUserModal} onOpenChange={setShowUserModal}>
       <DialogContent>

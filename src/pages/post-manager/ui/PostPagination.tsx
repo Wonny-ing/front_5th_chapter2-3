@@ -1,14 +1,13 @@
+import { useLayoutStore } from "@shared/model/store.ts"
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/ui"
 import React from "react"
 
-interface IProps {
-  limit: number
-  setLimit: React.Dispatch<React.SetStateAction<number>>
-  skip: number
-  setSkip: React.Dispatch<React.SetStateAction<number>>
+interface PostPaginationProps {
   total: number
 }
-export default function PostPagination({ limit, setLimit, skip, setSkip, total }: IProps) {
+export default function PostPagination({ total }: PostPaginationProps) {
+  const { skip, setSkip, limit, setLimit } = useLayoutStore()
+
   return (
     <div className="flex justify-between items-center">
       <div className="flex items-center gap-2">

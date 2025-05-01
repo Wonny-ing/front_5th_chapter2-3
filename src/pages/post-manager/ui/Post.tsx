@@ -1,23 +1,37 @@
 import { useDeletePostMutation } from "@entities/post/api/mutations.ts"
+import { usePostStore } from "@entities/post/model/store.ts"
 import { useUserByIdQuery } from "@entities/user/api/queries.ts"
+import { useUserStore } from "@entities/user/model/store.ts"
+import { useLayoutStore } from "@shared/model/store.ts"
 import { Button, TableCell, TableRow } from "@shared/ui"
 import HighlightText from "@shared/ui/HighlightText.tsx"
 import { Edit2, MessageSquare, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react"
 import React from "react"
 
-export default function Post({
-  post,
-  searchQuery,
-  selectedTag,
-  setSelectedTag,
-  updateURL,
-  openUserModal,
-  openPostDetail,
-  setSelectedPost,
-  setShowEditDialog,
-  limit,
-  skip,
-}) {
+export default function Post({ post, updateURL }) {
+  const {
+    skip,
+    limit,
+    searchQuery,
+    selectedTag,
+    setSelectedTag,
+    setShowEditDialog,
+    setShowUserModal,
+    setShowPostDetailDialog,
+  } = useLayoutStore()
+  const { setSelectedUser } = useUserStore()
+  const { setSelectedPost } = usePostStore()
+
+  // 사용자 모달 열기
+  const openUserModal = async (user) => {
+    try {
+      setSelectedUser(user)
+      setShowUserModal(true)
+    } catch (error) {
+      console.error("사용자 정보 가져오기 오류:", error)
+    }
+  }
+
   const { data: user, isLoading: isUserLoading } = useUserByIdQuery({
     id: post.userId,
   })
@@ -65,9 +79,9 @@ export default function Post({
       <TableCell>
         <div
           className="flex items-center space-x-2 cursor-pointer"
-          onClick={() => {
+          onClick={async () => {
             if (isUserLoading) return
-            openUserModal(user)
+            await openUserModal(user)
           }}
         >
           <img
@@ -88,7 +102,14 @@ export default function Post({
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => openPostDetail(post)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedPost(post)
+              setShowPostDetailDialog(true)
+            }}
+          >
             <MessageSquare className="w-4 h-4" />
           </Button>
           <Button

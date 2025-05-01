@@ -2,20 +2,7 @@ import Post from "@pages/post-manager/ui/Post.tsx"
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@shared/ui"
 import React from "react"
 
-export default function Posts({
-  posts,
-  searchQuery,
-  selectedTag,
-  setSelectedTag,
-  updateURL,
-  openPostDetail,
-  openUserModal,
-  setSelectedPost,
-  setShowEditDialog,
-  // deletePost,
-  limit,
-  skip,
-}) {
+export default function Posts({ posts, updateURL, openPostDetail }) {
   return (
     <Table>
       <TableHeader>
@@ -29,20 +16,7 @@ export default function Posts({
       </TableHeader>
       <TableBody>
         {posts.map((post) => (
-          <Post
-            key={post.id}
-            post={post}
-            searchQuery={searchQuery}
-            selectedTag={selectedTag}
-            setSelectedTag={setSelectedTag}
-            updateURL={updateURL}
-            openUserModal={openUserModal}
-            openPostDetail={openPostDetail}
-            setSelectedPost={setSelectedPost}
-            setShowEditDialog={setShowEditDialog}
-            limit={limit}
-            skip={skip}
-          />
+          <Post key={post.id} post={post} updateURL={updateURL} openPostDetail={openPostDetail} />
         ))}
       </TableBody>
     </Table>

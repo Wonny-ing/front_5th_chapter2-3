@@ -1,5 +1,6 @@
 import { usePostTagsQuery } from "@entities/post/api/queries.ts"
 import { PostTag } from "@entities/post/model/types.ts"
+import { useLayoutStore } from "@shared/model/store.ts"
 import {
   Input,
   Select,
@@ -11,32 +12,21 @@ import {
 import { Search } from "lucide-react"
 import React from "react"
 
-interface IProps {
-  searchQuery: string
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>
-  selectedTag: string
-  setSelectedTag: React.Dispatch<React.SetStateAction<string>>
-  sortBy: string
-  setSortBy: React.Dispatch<React.SetStateAction<string>>
-  sortOrder: string
-  setSortOrder: React.Dispatch<React.SetStateAction<string>>
+interface FilterBarProps {
   updateURL: () => void
-  fetchPostsByTag: (tag: string) => void
-  searchPosts: () => void
 }
-export default function FilterBar({
-  searchQuery,
-  setSearchQuery,
-  fetchPostsByTag,
-  searchPosts,
-  selectedTag,
-  setSelectedTag,
-  updateURL,
-  sortBy,
-  setSortBy,
-  sortOrder,
-  setSortOrder,
-}: IProps) {
+export default function FilterBar({ updateURL }: FilterBarProps) {
+  const {
+    searchQuery,
+    setSearchQuery,
+    selectedTag,
+    setSelectedTag,
+    sortBy,
+    setSortBy,
+    setSortOrder,
+    sortOrder,
+  } = useLayoutStore()
+
   const { data: tags } = usePostTagsQuery()
 
   return (
@@ -50,7 +40,11 @@ export default function FilterBar({
             className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && searchPosts()}
+            onKeyPress={(e) => {
+              if (e.key === "Enter" && !searchQuery) {
+                setSelectedTag("")
+              }
+            }}
           />
         </div>
       </div>
@@ -58,8 +52,7 @@ export default function FilterBar({
       <Select
         value={selectedTag}
         onValueChange={(value) => {
-          setSelectedTag(value)
-          fetchPostsByTag(value)
+          setSelectedTag(value === "all" ? "" : value)
           updateURL()
         }}
       >
